@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - TARGETARCH=${TARGETARCH:-arm64}
     restart: always
     environment:
       - REPO=${REPO:-}
