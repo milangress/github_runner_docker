@@ -70,18 +70,19 @@ docker buildx install
 # Remove any existing builders
 docker buildx rm container || true
 
-# Create a proper multi-platform builder with sufficient resources
+# Create a proper multi-platform builder with cache support
 docker buildx create \
     --name container \
     --driver docker-container \
     --driver-opt network=host \
     --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
     --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=100000000 \
+    --driver-opt image=moby/buildkit:latest \
     --use
 
 # Set up QEMU emulators for multi-platform builds (modern approach)
 echo "Setting up QEMU emulators for cross-platform builds..."
-docker run --rm --privileged tonistiigi/binfmt --install all
+docker run --rm --privileged tonistiigi/binfmt:latest --install all
 
 # Bootstrap the builder (this pre-loads buildkit)
 echo "Bootstrapping buildx builder for multi-platform builds..."

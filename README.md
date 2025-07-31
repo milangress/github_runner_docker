@@ -144,11 +144,31 @@ This runner includes **full Docker-in-Docker isolation** with its own Docker dae
 
 ### **Features:**
 - ✅ **Completely isolated** - runs its own Docker daemon (no host Docker access)
-- ✅ **Perfect for `docker buildx`** - built-in buildx with QEMU emulation (like GitHub-hosted runners)
+- ✅ **Buildx with cache persistence** - build cache survives container restarts
 - ✅ **Production-ready** - eliminates permission issues and provides complete isolation
-- ✅ **Multi-platform builds** - supports ARM64 and x64 architectures with proper QEMU setup
+- ✅ **Modern QEMU emulation** - uses `tonistiigi/binfmt` for cross-platform builds
 - ✅ **GitHub-compatible** - same buildx/QEMU configuration as GitHub-hosted runners
 - ✅ **Full Docker functionality** - build, push, compose, everything works
+
+### **⚠️ Important for Heavy Builds (Rust, C++, Go):**
+QEMU emulation can cause segmentation faults with intensive compilation. **Research shows this is a known limitation.**
+
+**For Rust projects, better alternatives:**
+```yaml
+# Option 1: Use Rust cross-compilation (fastest)
+- name: Build Rust binary
+  uses: houseabsolute/actions-rust-cross@v0
+  with:
+    target: aarch64-unknown-linux-musl
+    args: "--locked --release"
+
+# Option 2: Use native ARM64 runners (recommended)
+runs-on:
+  - self-hosted
+  - arm64  # or use cloud ARM64 runners
+```
+
+**Performance comparison:** Native builds are 3-5x faster than QEMU emulation
 
 ### **What This Enables:**
 - Building and pushing Docker images
@@ -164,6 +184,13 @@ docker-compose up -d
 ```
 
 The runner automatically starts its own Docker daemon with optimized settings for CI/CD workloads. No manual configuration needed!
+
+### **Build Cache Persistence:**
+The runner includes persistent build cache that survives container restarts:
+- **Docker layer cache**: `/var/lib/docker` volume preserves built layers
+- **Buildx cache**: `/root/.cache/buildx` volume preserves buildx cache
+- **Faster rebuilds**: Subsequent builds reuse cached layers and dependencies
+- **Cost savings**: Reduced build times mean lower CI costs
 
 ### **Security Model:**
 - Container starts as **root** (required for Docker daemon)
