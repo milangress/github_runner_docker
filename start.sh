@@ -64,10 +64,31 @@ if [ $timeout -le 0 ]; then
     exit 1
 fi
 
-# Ensure buildx is available and create default builder
+# Ensure buildx is available and create proper builder for multi-platform
 docker buildx install
-docker buildx create --use --name container --driver docker-container || true
-echo "Docker buildx builder created successfully"
+
+# Remove any existing builders
+docker buildx rm container || true
+
+# Create a proper multi-platform builder with sufficient resources
+docker buildx create \
+    --name container \
+    --driver docker-container \
+    --driver-opt network=host \
+    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
+    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=100000000 \
+    --use
+
+# Set up QEMU emulators for multi-platform builds (modern approach)
+echo "Setting up QEMU emulators for cross-platform builds..."
+docker run --rm --privileged tonistiigi/binfmt --install all
+
+# Bootstrap the builder (this pre-loads buildkit)
+echo "Bootstrapping buildx builder for multi-platform builds..."
+docker buildx inspect --bootstrap
+
+echo "Docker buildx builder created and bootstrapped successfully"
+echo "Available platforms: $(docker buildx inspect --format '{{.Platforms}}')"
 
 # Set proper permissions for docker user to access Docker socket
 chown docker:docker /var/run/docker.sock

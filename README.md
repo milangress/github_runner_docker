@@ -144,9 +144,10 @@ This runner includes **full Docker-in-Docker isolation** with its own Docker dae
 
 ### **Features:**
 - ✅ **Completely isolated** - runs its own Docker daemon (no host Docker access)
-- ✅ **Perfect for `docker buildx`** - built-in buildx support with experimental features
+- ✅ **Perfect for `docker buildx`** - built-in buildx with QEMU emulation (like GitHub-hosted runners)
 - ✅ **Production-ready** - eliminates permission issues and provides complete isolation
-- ✅ **Multi-platform builds** - supports ARM64 and x64 architectures
+- ✅ **Multi-platform builds** - supports ARM64 and x64 architectures with proper QEMU setup
+- ✅ **GitHub-compatible** - same buildx/QEMU configuration as GitHub-hosted runners
 - ✅ **Full Docker functionality** - build, push, compose, everything works
 
 ### **What This Enables:**

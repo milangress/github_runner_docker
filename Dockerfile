@@ -71,6 +71,8 @@ RUN (curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" -o "aw
 
 # Install container tools (podman, buildah, skopeo) - useful Docker alternatives
 RUN apt-get install -y --no-install-recommends podman buildah skopeo || true
+
+# Note: QEMU emulation is handled by tonistiigi/binfmt at runtime
 # Set up the actions runner
 RUN cd /home/docker && mkdir actions-runner && cd actions-runner \
     && curl -o actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz -L https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz \
