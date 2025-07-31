@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - TARGETARCH=arm64
+    restart: always
+    environment:
+      - REPO=<owner>/<repo>
+      - REG_TOKEN=<reg-token-for-self-hosted-runner>
+      - NAME=<runner-name>
+    deploy:
+      mode: replicated
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.4"
+          memory: 256M
