@@ -8,7 +8,7 @@ services:
             dockerfile: Dockerfile
         restart: always
         privileged: true
-        user: "0:0"  # Run as root for Docker daemon
+        user: "0:0" # Run as root for Docker daemon
         # No socket mount - runs its own Docker daemon inside container
         environment:
             - REPO=${REPO:-}
@@ -28,12 +28,12 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
-            start_period: 60s  # Longer start period for Docker daemon
+            start_period: 60s # Longer start period for Docker daemon
         deploy:
             resources:
                 limits:
-                    cpus: "2"      # More CPU for Docker daemon
-                    memory: 6G     # More memory for Docker daemon + builds
+                    cpus: "2" # More CPU for Docker daemon
+                    memory: 6G # More memory for Docker daemon + builds
                 reservations:
                     cpus: "0.5"
                     memory: 512M
