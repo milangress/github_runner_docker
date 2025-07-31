@@ -63,16 +63,17 @@ generate_registration_token() {
         exit 1
     fi
 
-    # Check if the response contains an error
-    if echo "$response" | grep -q '"message"'; then
-        echo "Error from GitHub API:"
-        echo "$response"
+    # Check if the response contains an error using jq
+    error_message=$(echo "$response" | jq -r '.message // empty')
+    if [[ -n "$error_message" ]]; then
+        echo "Error from GitHub API: $error_message"
+        echo "Full response: $response"
         exit 1
     fi
 
-    # Extract token from response
-    token=$(echo "$response" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-    expires_at=$(echo "$response" | grep -o '"expires_at":"[^"]*"' | cut -d'"' -f4)
+    # Extract token from response using jq for reliable JSON parsing
+    token=$(echo "$response" | jq -r '.token // empty')
+    expires_at=$(echo "$response" | jq -r '.expires_at // empty')
 
     if [[ -z "$token" ]]; then
         echo "Error: Could not extract token from API response"
