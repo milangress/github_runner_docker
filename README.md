@@ -6,6 +6,7 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
 
 - Supports both repository and organization runners
 - **Automatic token generation** via GitHub API (no manual token creation needed)
+- **Docker-in-Docker support** - can run Docker commands and build/push images
 - ARM64 architecture support (configurable for other architectures)
 - Automatic cleanup when containers stop
 - Customizable runner configuration
@@ -137,20 +138,49 @@ docker buildx build --platform linux/amd64 -t github-runner:amd64 .
 docker buildx build --platform linux/arm64 -t github-runner:arm64 .
 ```
 
-## Included Build Dependencies
+## Docker-in-Docker Support
 
-This runner image includes the following build dependencies:
+This runner includes Docker CE and can execute Docker commands within your workflows. This enables:
 
+- Building and pushing Docker images
+- Running containerized tests
+- Using Docker Compose
+- Any workflow that requires Docker commands
+
+### Security Considerations
+
+The runner uses Docker-in-Docker with:
+- `privileged: true` - Required for Docker daemon access
+- Docker socket mount: `/var/run/docker.sock:/var/run/docker.sock`
+
+This provides full Docker functionality but requires elevated privileges. Use with trusted workflows only.
+
+## Included Build Dependencies & Tools
+
+This runner image includes comprehensive tooling for modern CI/CD workflows:
+
+### **Core Build Tools:**
 - build-essential
-- libssl-dev
-- pkg-config
-- openssl
-- libffi-dev
+- libssl-dev, pkg-config, openssl, libffi-dev
 - python3 and pip
-- jq
-- ssh
+- git and **Git LFS** (for large file handling)
 
-These dependencies are especially helpful for building Rust projects that require OpenSSL or other system libraries.
+### **Container & Cloud Tools:**
+- **Docker CE, Docker CLI, and Docker Compose** (full Docker support)
+- **Podman, Buildah, Skopeo** (alternative container tools)
+- **AWS CLI** (for cloud deployments)
+
+### **Development & CI/CD Tools:**
+- **GitHub CLI** (`gh`) - for GitHub API interactions
+- **yq** - YAML processor for configuration files
+- **jq** - JSON processor (used throughout scripts)
+- **ssh** - for secure connections
+
+### **Architecture Support:**
+- Full ARM64 and x64 architecture support
+- Multi-platform Docker builds
+
+These dependencies support a wide range of workflows including Rust/OpenSSL projects, containerized applications, cloud deployments, and complex CI/CD pipelines.
 
 ## Health Check
 

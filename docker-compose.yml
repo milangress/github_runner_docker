@@ -7,6 +7,9 @@ services:
             context: .
             dockerfile: Dockerfile
         restart: always
+        privileged: true
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
         environment:
             - REPO=${REPO:-}
             - ORGANIZATION=${ORGANIZATION:-}
