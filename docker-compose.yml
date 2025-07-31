@@ -23,6 +23,8 @@ services:
         volumes:
             # Docker storage for the internal daemon
             - docker-storage:/var/lib/docker
+            # Buildx cache for faster rebuilds
+            - buildx-cache:/root/.cache/buildx
         healthcheck:
             test: ["CMD", "/healthcheck.sh"]
             interval: 30s
@@ -40,3 +42,4 @@ services:
 
 volumes:
     docker-storage:
+    buildx-cache:
