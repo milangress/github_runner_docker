@@ -35,7 +35,7 @@ services:
             resources:
                 limits:
                     cpus: "4" # Even more CPU for multi-platform Rust builds
-                    memory: 8G # More memory for QEMU emulation + Rust builds
+                    memory: 12G # More memory for QEMU emulation + Rust builds
                 reservations:
                     cpus: "0.5"
                     memory: 1G
