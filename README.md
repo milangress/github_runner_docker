@@ -5,6 +5,7 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
 ## Features
 
 - Supports both repository and organization runners
+- **Automatic token generation** via GitHub API (no manual token creation needed)
 - ARM64 architecture support (configurable for other architectures)
 - Automatic cleanup when containers stop
 - Customizable runner configuration
@@ -27,9 +28,12 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
    ```
    # Set either REPO or ORGANIZATION (not both)
    REPO=your-username/your-repo
-   
-   # Add your GitHub registration token
-   REG_TOKEN=your-github-token
+
+   # Option 1: Use GitHub Personal Access Token (recommended - auto-generates registration token)
+   GITHUB_TOKEN=ghp_your_personal_access_token_here
+
+   # Option 2: Manual registration token (alternative)
+   # REG_TOKEN=your-manual-registration-token
    ```
 
 4. Build and start the runner:
@@ -46,24 +50,62 @@ The project uses environment variables for configuration. There are two ways to 
 
 ### Available Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `REPO` | GitHub repository in format `owner/repo`. Use this for repository runners. | Yes* | - |
-| `ORGANIZATION` | GitHub organization name. Use this for organization runners. | Yes* | - |
-| `REG_TOKEN` | GitHub token for runner registration. Get this from your GitHub repository or organization settings. | Yes | - |
-| `NAME` | Name for the runner. | No | Container hostname |
-| `WORK_DIR` | Directory where the runner will store workflow data. | No | `_work` |
-| `LABELS` | Custom labels for the runner (comma-separated). | No | - |
-| `RUNNER_GROUP` | Runner group name. | No | `Default` |
-| `REPLACE_EXISTING` | Whether to replace runners with the same name. | No | `true` |
+| Variable           | Description                                                                                                                                                  | Required | Default            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ------------------ |
+| `REPO`             | GitHub repository in format `owner/repo`. Use this for repository runners.                                                                                   | Yes*     | -                  |
+| `ORGANIZATION`     | GitHub organization name. Use this for organization runners.                                                                                                 | Yes*     | -                  |
+| `GITHUB_TOKEN`     | Personal Access Token with `admin:org` scope (for orgs) or `repo` scope (for repos). **Recommended approach** - automatically generates registration tokens. | Yes**    | -                  |
+| `REG_TOKEN`        | Manual GitHub registration token. Alternative to `GITHUB_TOKEN`. Get this from your GitHub repository or organization settings.                              | Yes**    | -                  |
+| `NAME`             | Name for the runner.                                                                                                                                         | No       | Container hostname |
+| `WORK_DIR`         | Directory where the runner will store workflow data.                                                                                                         | No       | `_work`            |
+| `LABELS`           | Custom labels for the runner (comma-separated).                                                                                                              | No       | -                  |
+| `RUNNER_GROUP`     | Runner group name.                                                                                                                                           | No       | `Default`          |
+| `REPLACE_EXISTING` | Whether to replace runners with the same name.                                                                                                               | No       | `true`             |
 
 *Either `REPO` or `ORGANIZATION` must be specified, but not both.
+**Either `GITHUB_TOKEN` or `REG_TOKEN` must be provided.
 
-### Example .env File
+## Creating GitHub Tokens
 
+### Option 1: Personal Access Token (Recommended)
+
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Click "Generate new token (classic)"
+3. Select appropriate scopes:
+   - For **organization runners**: `admin:org` scope
+   - For **repository runners**: `repo` scope
+4. Copy the generated token and use it as `GITHUB_TOKEN`
+
+### Option 2: Fine-grained Personal Access Token
+
+1. Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens
+2. Click "Generate new token"
+3. Select appropriate permissions:
+   - For **organization runners**: "Self-hosted runners" organization permissions (write)
+   - For **repository runners**: "Actions" repository permissions (write)
+4. Copy the generated token and use it as `GITHUB_TOKEN`
+
+### Option 3: Manual Registration Token (Alternative)
+
+1. Go to your repository/organization settings
+2. Navigate to Actions → Runners
+3. Click "New self-hosted runner"
+4. Copy the token from the configuration command
+5. Use it as `REG_TOKEN` (expires in 1 hour)
+
+### Example .env Files
+
+**Using Personal Access Token (Recommended):**
+```
+ORGANIZATION=my-org
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LABELS=self-hosted,linux,docker
+```
+
+**Using Manual Registration Token:**
 ```
 REPO=username/repository
-REG_TOKEN=your_github_token_here
+REG_TOKEN=AABBCCDDEE1234567890
 LABELS=self-hosted,linux
 ```
 
