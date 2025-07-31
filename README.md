@@ -6,11 +6,11 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
 
 - Supports both repository and organization runners
 - **Automatic token generation** via GitHub API (no manual token creation needed)
-- **Docker-in-Docker support** - can run Docker commands and build/push images
+- **True Docker-in-Docker isolation** - complete isolated Docker daemon with buildx support
 - ARM64 architecture support (configurable for other architectures)
 - Automatic cleanup when containers stop
 - Customizable runner configuration
-- Includes build dependencies for Rust/OpenSSL projects
+- Comprehensive tooling for modern CI/CD workflows
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
    ```
 
 4. Build and start the runner:
-   ```
+   ```bash
    docker-compose up -d
    ```
 
@@ -140,20 +140,29 @@ docker buildx build --platform linux/arm64 -t github-runner:arm64 .
 
 ## Docker-in-Docker Support
 
-This runner includes Docker CE and can execute Docker commands within your workflows. This enables:
+This runner includes **full Docker-in-Docker isolation** with its own Docker daemon running inside the container.
 
+### **Features:**
+- ✅ **Completely isolated** - runs its own Docker daemon (no host Docker access)
+- ✅ **Perfect for `docker buildx`** - built-in buildx support with experimental features
+- ✅ **Production-ready** - eliminates permission issues and provides complete isolation
+- ✅ **Multi-platform builds** - supports ARM64 and x64 architectures
+- ✅ **Full Docker functionality** - build, push, compose, everything works
+
+### **What This Enables:**
 - Building and pushing Docker images
 - Running containerized tests
 - Using Docker Compose
-- Any workflow that requires Docker commands
+- Docker buildx multi-platform builds
+- Complex CI/CD pipelines
+- Any workflow requiring Docker commands
 
-### Security Considerations
+### **Usage:**
+```bash
+docker-compose up -d
+```
 
-The runner uses Docker-in-Docker with:
-- `privileged: true` - Required for Docker daemon access
-- Docker socket mount: `/var/run/docker.sock:/var/run/docker.sock`
-
-This provides full Docker functionality but requires elevated privileges. Use with trusted workflows only.
+The runner automatically starts its own Docker daemon with optimized settings for CI/CD workloads. No manual configuration needed!
 
 ## Included Build Dependencies & Tools
 

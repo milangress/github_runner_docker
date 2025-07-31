@@ -32,6 +32,45 @@ echo "======================================"
 
 cd /home/docker/actions-runner
 
+# Start Docker daemon - ALWAYS run Docker-in-Docker
+echo "Starting Docker daemon for full Docker-in-Docker isolation..."
+
+# Start dockerd in background with proper settings for DinD
+dockerd \
+    --host=unix:///var/run/docker.sock \
+    --host=tcp://0.0.0.0:2376 \
+    --storage-driver=overlay2 \
+    --userland-proxy=false \
+    --experimental \
+    --metrics-addr=0.0.0.0:9323 &
+
+# Wait for Docker daemon to be ready
+timeout=60
+echo "Waiting for Docker daemon to start..."
+while [ $timeout -gt 0 ]; do
+    if docker info >/dev/null 2>&1; then
+        echo "Docker daemon is ready!"
+        echo "Docker version: $(docker --version)"
+        echo "Docker buildx version: $(docker buildx version)"
+        break
+    fi
+    echo "Docker daemon starting... ($timeout seconds remaining)"
+    sleep 2
+    timeout=$((timeout-2))
+done
+
+if [ $timeout -le 0 ]; then
+    echo "ERROR: Docker daemon failed to start within 60 seconds"
+    echo "Checking Docker daemon logs..."
+    tail -20 /var/log/docker.log 2>/dev/null || echo "No Docker logs found"
+    exit 1
+fi
+
+# Ensure buildx is available and create default builder
+docker buildx install
+docker buildx create --use --name container --driver docker-container || true
+echo "Docker buildx builder created successfully"
+
 # Function to generate registration token via GitHub API
 generate_registration_token() {
     local api_url
@@ -150,12 +189,19 @@ done
 
 # Define cleanup function to remove the runner when the container stops
 cleanup() {
-    echo "Removing runner..."
+    echo "Shutting down GitHub runner..."
+
+    # Remove runner from GitHub
     if ! ./config.sh remove --unattended --token ${REG_TOKEN}; then
         echo "Warning: Failed to remove runner. It may need to be removed manually from GitHub."
     else
         echo "Runner removed successfully."
     fi
+
+    # Shut down our Docker daemon gracefully
+    echo "Shutting down Docker daemon..."
+    pkill dockerd || true
+    sleep 2
 }
 
 # Error handling function for runner process

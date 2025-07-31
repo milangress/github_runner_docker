@@ -8,8 +8,7 @@ services:
             dockerfile: Dockerfile
         restart: always
         privileged: true
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
+        # No socket mount - runs its own Docker daemon inside container
         environment:
             - REPO=${REPO:-}
             - ORGANIZATION=${ORGANIZATION:-}
@@ -17,20 +16,26 @@ services:
             - GITHUB_TOKEN=${GITHUB_TOKEN:-}
             - NAME=${NAME:-runner-${HOSTNAME}}
             - WORK_DIR=${WORK_DIR:-_work}
-            - LABELS=${LABELS:-}
+            - LABELS=${LABELS:-docker-in-docker,buildx}
             - RUNNER_GROUP=${RUNNER_GROUP:-Default}
             - REPLACE_EXISTING=${REPLACE_EXISTING:-true}
+        volumes:
+            # Docker storage for the internal daemon
+            - docker-storage:/var/lib/docker
         healthcheck:
             test: ["CMD", "/healthcheck.sh"]
             interval: 30s
             timeout: 10s
             retries: 3
-            start_period: 30s
+            start_period: 60s  # Longer start period for Docker daemon
         deploy:
             resources:
                 limits:
-                    cpus: "1"
-                    memory: 4G
+                    cpus: "2"      # More CPU for Docker daemon
+                    memory: 6G     # More memory for Docker daemon + builds
                 reservations:
-                    cpus: "0.4"
-                    memory: 256M
+                    cpus: "0.5"
+                    memory: 512M
+
+volumes:
+    docker-storage:

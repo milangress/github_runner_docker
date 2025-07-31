@@ -20,7 +20,8 @@ RUN useradd -m docker
 # Install necessary packages including Docker dependencies
 RUN apt install -y --no-install-recommends \
     curl build-essential libssl-dev libffi-dev python3 python3-venv python3-dev python3-pip jq \
-    pkg-config ssh ca-certificates gnupg lsb-release unzip git
+    pkg-config ssh ca-certificates gnupg lsb-release unzip git \
+    iptables supervisor dumb-init
 
 # Configure Docker repository
 RUN mkdir -p /etc/apt/keyrings \
