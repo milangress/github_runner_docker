@@ -16,12 +16,10 @@ services:
       - RUNNER_GROUP=${RUNNER_GROUP:-Default}
       - REPLACE_EXISTING=${REPLACE_EXISTING:-true}
     deploy:
-      mode: replicated
-      replicas: 2
       resources:
         limits:
-          cpus: "0.5"
-          memory: 512M
+          cpus: "1"
+          memory: 2G
         reservations:
           cpus: "0.4"
           memory: 256M
