@@ -94,6 +94,11 @@ docker buildx build --platform linux/amd64 -t github-runner:amd64 .
 docker buildx build --platform linux/arm64 -t github-runner:arm64 .
 ```
 
+## Health Check
+
+The Docker setup includes a built-in health check that monitors the status of the GitHub runner. This helps Docker determine if the container is functioning properly and enables automatic recovery if the runner crashes.
+Verifies that the runner process (`Runner.Listener`) is actually running
+
 ## Signal Handling
 
 The runner is configured to gracefully deregister from GitHub when the container stops.

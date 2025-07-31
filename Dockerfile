@@ -29,9 +29,10 @@ RUN cd /home/docker && mkdir actions-runner && cd actions-runner \
 # Change ownership to docker user and install dependencies
 RUN chown -R docker /home/docker && /home/docker/actions-runner/bin/installdependencies.sh
 
-# Copy the start script and make it executable
+# Copy the start script and health check script and make them executable
 COPY start.sh /start.sh
-RUN chmod +x /start.sh
+COPY healthcheck.sh /healthcheck.sh
+RUN chmod +x /start.sh /healthcheck.sh
 
 # Switch to docker user
 USER docker

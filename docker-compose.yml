@@ -15,6 +15,12 @@ services:
       - LABELS=${LABELS:-}
       - RUNNER_GROUP=${RUNNER_GROUP:-Default}
       - REPLACE_EXISTING=${REPLACE_EXISTING:-true}
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     deploy:
       resources:
         limits:
