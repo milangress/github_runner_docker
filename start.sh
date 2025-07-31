@@ -1,4 +1,10 @@
 #!/bin/bash
+set -e
+
+# Constants for error handling
+MAX_RETRIES=5
+RETRY_DELAY=30
+RETRY_COUNT=0
 
 # Set default values for environment variables
 ORGANIZATION=${ORGANIZATION:-""}
@@ -50,17 +56,63 @@ if [[ "$REPLACE_EXISTING" == "true" ]]; then
     CONFIGURE_OPTS="${CONFIGURE_OPTS} --replace"
 fi
 
-./config.sh ${CONFIGURE_OPTS}
+# Try to configure the runner with retries
+while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
+    echo "Attempting to configure runner (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)..."
+
+    if ./config.sh ${CONFIGURE_OPTS}; then
+        echo "Runner configuration successful!"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT+1))
+
+        if [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; then
+            echo "Runner configuration failed. Retrying in ${RETRY_DELAY} seconds..."
+            sleep $RETRY_DELAY
+        else
+            echo "ERROR: Failed to configure runner after ${MAX_RETRIES} attempts."
+            echo "Please check your REG_TOKEN, repository/organization name, and GitHub access."
+            echo "Waiting 300 seconds before exiting to prevent rapid restart loops..."
+            sleep 300
+            exit 1
+        fi
+    fi
+done
 
 # Define cleanup function to remove the runner when the container stops
 cleanup() {
     echo "Removing runner..."
-    ./config.sh remove --unattended --token ${REG_TOKEN}
+    if ! ./config.sh remove --unattended --token ${REG_TOKEN}; then
+        echo "Warning: Failed to remove runner. It may need to be removed manually from GitHub."
+    else
+        echo "Runner removed successfully."
+    fi
+}
+
+# Error handling function for runner process
+handle_runner_error() {
+    echo "ERROR: Runner process exited unexpectedly with status $1"
+    echo "Waiting 60 seconds before exiting to prevent rapid restart loops..."
+    sleep 60
+    exit 1
 }
 
 # Set up traps to ensure the runner is removed when the container is stopped
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
 
-# Start the runner and wait for it to complete
-./run.sh & wait $!
+# Start the runner with error handling
+echo "Starting GitHub runner..."
+./run.sh &
+RUNNER_PID=$!
+
+# Wait for runner process and capture exit status
+wait $RUNNER_PID
+EXIT_STATUS=$?
+
+# If the runner didn't exit cleanly (exit code 0), handle the error
+if [ $EXIT_STATUS -ne 0 ]; then
+    handle_runner_error $EXIT_STATUS
+fi
+
+echo "Runner exited normally."
