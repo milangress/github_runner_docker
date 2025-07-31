@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   github-runner:
+    image: milangress/github-runner-docker:latest
     build:
       context: .
       dockerfile: Dockerfile
