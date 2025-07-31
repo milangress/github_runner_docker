@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check if the Docker daemon is running
+if ! pgrep dockerd > /dev/null; then
+  echo "ERROR: Docker daemon is not running!"
+  exit 1
+fi
+
 # Check if the runner process is running
 if pgrep -f "Runner.Listener" > /dev/null; then
   echo "GitHub runner is running."
@@ -14,10 +20,11 @@ if pgrep -f "Runner.Listener" > /dev/null; then
     exit 0
   fi
 else
-  # Check if we're in configuration phase (within first 2 minutes of container start)
+  # Check if we're in configuration phase (within first 3 minutes of container start)
+  # Docker daemon + runner startup takes longer with Docker-in-Docker
   UPTIME=$(cat /proc/uptime | awk '{print int($1)}')
-  if [ $UPTIME -lt 120 ]; then
-    echo "Container recently started, allowing time for runner to initialize..."
+  if [ $UPTIME -lt 180 ]; then
+    echo "Container recently started, allowing time for Docker daemon and runner to initialize..."
     exit 0
   fi
 

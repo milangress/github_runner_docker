@@ -30,9 +30,7 @@ echo "REG_TOKEN:        $(if [[ -n "$REG_TOKEN" ]]; then echo "Provided"; else e
 echo "GITHUB_TOKEN:     $(if [[ -n "$GITHUB_TOKEN" ]]; then echo "Provided"; else echo "Not provided"; fi)"
 echo "======================================"
 
-cd /home/docker/actions-runner
-
-# Start Docker daemon - ALWAYS run Docker-in-Docker
+# Start Docker daemon as root (required for dockerd)
 echo "Starting Docker daemon for full Docker-in-Docker isolation..."
 
 # Start dockerd in background with proper settings for DinD
@@ -70,6 +68,15 @@ fi
 docker buildx install
 docker buildx create --use --name container --driver docker-container || true
 echo "Docker buildx builder created successfully"
+
+# Set proper permissions for docker user to access Docker socket
+chown docker:docker /var/run/docker.sock
+usermod -aG docker docker
+
+# Switch to docker user for GitHub Actions runner (security best practice)
+echo "Switching to docker user for GitHub Actions runner..."
+cd /home/docker/actions-runner
+chown -R docker:docker /home/docker/actions-runner
 
 # Function to generate registration token via GitHub API
 generate_registration_token() {
@@ -164,11 +171,11 @@ if [[ "$REPLACE_EXISTING" == "true" ]]; then
     CONFIGURE_OPTS="${CONFIGURE_OPTS} --replace"
 fi
 
-# Try to configure the runner with retries
+# Try to configure the runner with retries (as docker user)
 while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
     echo "Attempting to configure runner (attempt $((RETRY_COUNT+1))/$MAX_RETRIES)..."
 
-    if ./config.sh ${CONFIGURE_OPTS}; then
+    if su - docker -c "cd /home/docker/actions-runner && ./config.sh ${CONFIGURE_OPTS}"; then
         echo "Runner configuration successful!"
         break
     else
@@ -191,8 +198,8 @@ done
 cleanup() {
     echo "Shutting down GitHub runner..."
 
-    # Remove runner from GitHub
-    if ! ./config.sh remove --unattended --token ${REG_TOKEN}; then
+    # Remove runner from GitHub (as docker user)
+    if ! su - docker -c "cd /home/docker/actions-runner && ./config.sh remove --unattended --token ${REG_TOKEN}"; then
         echo "Warning: Failed to remove runner. It may need to be removed manually from GitHub."
     else
         echo "Runner removed successfully."
@@ -216,9 +223,9 @@ handle_runner_error() {
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
 
-# Start the runner with error handling
+# Start the runner with error handling (as docker user)
 echo "Starting GitHub runner..."
-./run.sh &
+su - docker -c "cd /home/docker/actions-runner && ./run.sh" &
 RUNNER_PID=$!
 
 # Wait for runner process and capture exit status

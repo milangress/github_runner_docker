@@ -164,6 +164,12 @@ docker-compose up -d
 
 The runner automatically starts its own Docker daemon with optimized settings for CI/CD workloads. No manual configuration needed!
 
+### **Security Model:**
+- Container starts as **root** (required for Docker daemon)
+- Docker daemon runs as **root** (standard Docker requirement)
+- GitHub Actions runner runs as **docker user** (security best practice)
+- Docker socket permissions allow docker user to access Docker daemon
+
 ## Included Build Dependencies & Tools
 
 This runner image includes comprehensive tooling for modern CI/CD workflows:

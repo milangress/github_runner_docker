@@ -8,6 +8,7 @@ services:
             dockerfile: Dockerfile
         restart: always
         privileged: true
+        user: "0:0"  # Run as root for Docker daemon
         # No socket mount - runs its own Docker daemon inside container
         environment:
             - REPO=${REPO:-}
