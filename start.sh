@@ -40,7 +40,12 @@ dockerd \
     --storage-driver=overlay2 \
     --userland-proxy=false \
     --experimental \
-    --metrics-addr=0.0.0.0:9323 &
+    --metrics-addr=0.0.0.0:9323 \
+    --default-runtime=runc \
+    --cgroup-parent=docker \
+    --log-driver=local \
+    --log-opt max-size=10m \
+    --log-opt max-file=3 &
 
 # Wait for Docker daemon to be ready
 timeout=60
@@ -65,24 +70,40 @@ if [ $timeout -le 0 ]; then
 fi
 
 # Ensure buildx is available and create proper builder for multi-platform
+echo "Setting up Docker buildx..."
 docker buildx install
 
-# Remove any existing builders
-docker buildx rm container || true
+# Clean up any existing builders and their containers
+echo "Cleaning up existing builders..."
+docker buildx rm container --force 2>/dev/null || true
+docker buildx prune --force --all 2>/dev/null || true
 
-# Create a proper multi-platform builder with cache support
+# Create a proper multi-platform builder with more conservative settings
+echo "Creating new buildx builder..."
 docker buildx create \
     --name container \
     --driver docker-container \
     --driver-opt network=host \
-    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
-    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=100000000 \
-    --driver-opt image=moby/buildkit:latest \
+    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 \
+    --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000 \
+    --driver-opt image=moby/buildkit:v0.22.0 \
+    --bootstrap \
     --use
 
 # Set up QEMU emulators for multi-platform builds (modern approach)
 echo "Setting up QEMU emulators for cross-platform builds..."
 docker run --rm --privileged tonistiigi/binfmt:latest --install all
+
+# Verify buildx is working properly
+echo "Verifying buildx setup..."
+if ! docker buildx ls | grep -q "container.*running"; then
+    echo "ERROR: Buildx builder is not running properly"
+    docker buildx ls
+    exit 1
+fi
+
+echo "Buildx setup complete!"
+docker buildx ls
 
 # Bootstrap the builder (this pre-loads buildkit)
 echo "Bootstrapping buildx builder for multi-platform builds..."
