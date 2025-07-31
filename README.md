@@ -8,6 +8,7 @@ This repository contains a Dockerfile and Docker Compose configuration for setti
 - ARM64 architecture support (configurable for other architectures)
 - Automatic cleanup when containers stop
 - Customizable runner configuration
+- Includes build dependencies for Rust/OpenSSL projects
 
 ## Quick Start
 
@@ -93,6 +94,21 @@ To build for a specific architecture using Docker Buildx:
 docker buildx build --platform linux/amd64 -t github-runner:amd64 .
 docker buildx build --platform linux/arm64 -t github-runner:arm64 .
 ```
+
+## Included Build Dependencies
+
+This runner image includes the following build dependencies:
+
+- build-essential
+- libssl-dev
+- pkg-config
+- openssl
+- libffi-dev
+- python3 and pip
+- jq
+- ssh
+
+These dependencies are especially helpful for building Rust projects that require OpenSSL or other system libraries.
 
 ## Health Check
 
